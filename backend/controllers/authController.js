@@ -1,34 +1,49 @@
 const db = require('../config/db');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
+// Register
+exports.register = async (req, res) => {
+  try {
+    const { fname, sname, password, email } = req.body;
+    console.log("Received:", req.body);
 
-exports.register = (req, res) => {
-  const { fname, sname, password, email } = req.body;
+    if (!fname || !sname || !password || !email)
+      return res.status(400).json({ msg: 'All fields are required' });
 
-  if (!fname || !sname || !password || !email)
-    return res.status(400).json({ msg: 'All fields are required' });
+    const fullName = `${fname} ${sname}`;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("Full Name:", fullName, "Hashed:", hashedPassword);
 
-  const fullName = `${fname} ${sname}`;
+    const insertUserQuery = 'INSERT INTO users (username, password, registrationdate) VALUES (?, ?, NOW())';
+    db.query(insertUserQuery, [fullName, hashedPassword], (err, result) => {
+      if (err) {
+        console.error("User insert error:", err);
+        return res.status(500).json({ msg: 'User insert error', err });
+      }
 
-  const insertUserQuery = 'INSERT INTO users (username, password, registrationdate) VALUES (?, ?, NOW())';
+      const userId = result.insertId;
+      console.log("Inserted user_id:", userId);
 
-  db.query(insertUserQuery, [fullName, password], (err, result) => {
-    if (err) return res.status(500).json({ msg: 'User insert error', err });
+      const insertEmailQuery = 'INSERT INTO user_emails (email, user_id) VALUES (?, ?)';
+      db.query(insertEmailQuery, [email, userId], (err2) => {
+        if (err2) {
+          console.error("Email insert error:", err2);
+          return res.status(500).json({ msg: 'Email insert error', err2 });
+        }
 
-    const userId = result.insertId;
-
-    const insertEmailQuery = 'INSERT INTO user_emails (email, user_id) VALUES (?, ?)';
-    db.query(insertEmailQuery, [email, userId], (err2) => {
-      if (err2) return res.status(500).json({ msg: 'Email insert error', err2 });
-
-      res.json({ msg: 'Registered successfully', userId });
+        res.json({ msg: 'Registered successfully', userId });
+      });
     });
-  });
+  } catch (error) {
+    console.error("Exception:", error);
+    res.status(500).json({ msg: 'Unexpected error', error });
+  }
 };
 
+// Login
 exports.login = (req, res) => {
   const { email, password } = req.body;
-
   if (!email || !password)
     return res.status(400).json({ msg: 'Email and password are required' });
 
@@ -39,21 +54,14 @@ exports.login = (req, res) => {
     WHERE ue.email = ?
   `;
 
-  db.query(getUserQuery, [email], (err, results) => {
+  db.query(getUserQuery, [email], async (err, results) => {
     if (err) return res.status(500).json({ msg: 'Database error', err });
     if (results.length === 0) return res.status(400).json({ msg: 'Invalid email or password' });
 
-    const dbPassword = results[0].password;
-
-    console.log("Entered:", password);
-    console.log("DB:", dbPassword);
-
-    if (password !== dbPassword) {
-      return res.status(400).json({ msg: 'Invalid email or password' });
-    }
+    const match = await bcrypt.compare(password, results[0].password);
+    if (!match) return res.status(400).json({ msg: 'Invalid email or password' });
 
     const token = jwt.sign({ user_id: results[0].user_id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
     res.json({ msg: 'Login successful', token });
   });
 };

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Income Tracker</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f0f2f5;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      margin-top: 50px;
+      border-radius: 10px;
+      width: 600px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    input, button {
+      padding: 8px;
+      width: 90%;
+    }
+
+    .nav-buttons {
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px; /* Added gap to prevent buttons from joining */
+    }
+
+    .nav-buttons a {
+      text-decoration: none;
+      background-color: #007bff;
+      color: white;
+      padding: 6px 15px; /* Reduced padding */
+      font-size: 14px; /* Reduced font size */
+      border-radius: 5px;
+      text-align: center;
+      width: 48%;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <center>
+    <div class="container">
+      <h2>Add Income</h2>
+      <form id="incomeForm">
+        <input type="number" id="amount" placeholder="Amount" required /><br><br>
+        <input type="date" id="incomedate" required /><br><br>
+        <input type="text" id="description" placeholder="Description" required /><br><br>
+        <button type="submit">Add Income</button>
+      </form>
+
+      <h3 style="margin-top: 30px;">Your Incomes</h3>
+      <table id="incomeTable">
+        <thead>
+          <tr>
+            <th>Amount (₹)</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="incomeList">
+          <!-- Data rows will appear here -->
+        </tbody>
+      </table>
+
+      <!-- Navigation Buttons -->
+      <div class="nav-buttons">
+        <a href="summary.html">Go to Summary</a>
+        <a href="expense.html">Go to Expenses</a>
+      </div>
+    </div>
+  </center>
+
+  <script>
+    const API = 'http://localhost:5000/income';
+    const token = localStorage.getItem('token');
+    const incomeForm = document.getElementById('incomeForm');
+    const incomeList = document.getElementById('incomeList');
+  
+    // Create
+    incomeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = document.getElementById('amount').value;
+      const incomedate = document.getElementById('incomedate').value;
+      const description = document.getElementById('description').value;
+  
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount, incomedate, description })
+      });
+  
+      if (res.ok) {
+        incomeForm.reset();
+        loadIncomes();
+      }
+    });
+  
+    // Read
+    async function loadIncomes() {
+      const res = await fetch(API, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      const incomes = await res.json();
+      incomeList.innerHTML = '';
+  
+      incomes.forEach(income => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>₹${income.amount}</td>
+          <td>${income.incomedate}</td>
+          <td>${income.description}</td>
+          <td>
+            <button onclick='editIncome(${income.income_id}, ${income.amount}, "${income.incomedate}", ${JSON.stringify(income.description)})'>Edit</button>
+            <button onclick="deleteIncome(${income.income_id})">Delete</button>
+          </td>
+        `;
+        incomeList.appendChild(row);
+      });
+    }
+  
+    // Delete
+    async function deleteIncome(id) {
+      await fetch(`${API}/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      loadIncomes();
+    }
+  
+    // Update
+    async function editIncome(id, oldAmount, oldDate, oldDescription) {
+      const newAmount = prompt('New Amount:', oldAmount);
+      const newDate = prompt('New Date (YYYY-MM-DD):', oldDate);
+      const newDescription = prompt('New Description:', oldDescription);
+  
+      if (!newAmount || !newDate || !newDescription) {
+        alert("All fields are required.");
+        return;
+      }
+  
+      const res = await fetch(`${API}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amount: newAmount,
+          incomedate: newDate,
+          description: newDescription
+        })
+      });
+  
+      const data = await res.json();
+      if (res.ok) {
+        loadIncomes();
+      } else {
+        alert(data.msg || 'Failed to update income');
+      }
+    }
+  
+    loadIncomes();
+  </script>
+</body>
+</html>

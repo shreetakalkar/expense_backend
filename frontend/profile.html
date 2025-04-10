@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile - Expense Tracker</title>
+</head>
+<body style="background-color: #f0f8ff; font-family: Arial, sans-serif;">
+  <center>
+    <div style="background-color: #ffffff; padding: 30px; width: 400px; margin-top: 80px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+      <h1 style="color: #333;">User Profile</h1>
+      <p style="color: #666;">Manage your account information.</p>
+
+      <form action="summary.html" method="post">
+        <label for="name" style="display: block; text-align: left;">Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" /><br /><br />
+
+        <label for="email" style="display: block; text-align: left;">Email:</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" /><br /><br />
+
+        <label for="password" style="display: block; text-align: left;">Password:</label>
+        <input type="password" id="password" name="password" placeholder="Enter new password" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" /><br /><br />
+
+        <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+          Update Profile
+        </button>
+      </form>
+
+      <hr style="margin: 20px 0;" />
+
+      <button onclick="confirmDeletion()" style="background-color: #ff4d4d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+        Delete Account
+      </button>
+
+      <script>
+        function confirmDeletion() {
+          if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+            alert("Account deleted successfully.");
+          }
+        }
+      </script>
+    </div>
+  </center>
+</body>
+</html>

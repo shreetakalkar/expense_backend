@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Expense Tracker</title>
+</head>
+<body style="background-color: #f0f8ff; font-family: Arial, sans-serif;">
+  <center>
+    <div style="background-color: #ffffff; padding: 30px; width: 350px; margin-top: 100px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+      <h1 style="color: #333;">Login to Your Account</h1>
+      <p style="color: #666;">Welcome back! Please login to continue.</p>
+
+      <form id="loginForm">
+        <label for="email" style="display: block; text-align: left;">Email:</label>
+        <input type="email" id="email" name="email" required style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" /><br /><br />
+
+        <label for="password" style="display: block; text-align: left;">Password:</label>
+        <input type="password" id="password" name="password" required minlength="6" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" /><br /><br />
+
+        <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+          Login
+        </button>
+      </form>
+
+      <p id="message" style="color: red; margin-top: 10px;"></p>
+
+      <p style="margin-top: 15px; color: #333;">
+        Don't have an account? <a href="signup.html" style="color: #007bff; text-decoration: none;">Sign up here</a>
+      </p>
+    </div>
+  </center>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!email || !password) {
+        document.getElementById('message').textContent = 'All fields are required';
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/user/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+
+        // Save token and user info to localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redirect to income.html or dashboard
+        window.location.href = 'income.html';
+
+      } catch (err) {
+        document.getElementById('message').textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

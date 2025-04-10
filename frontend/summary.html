@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Summary - Expense Tracker</title>
+</head>
+<body style="background-color: #f0f8ff; font-family: Arial, sans-serif;">
+  <center>
+    <div style="background-color: #ffffff; padding: 30px; width: 90%; max-width: 800px; margin-top: 50px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <h1 style="color: #333;">Financial Summary</h1>
+      <p style="color: #666;">Overview of your budgets, income, and expenses</p>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 30px; text-align: left;">
+        <div style="flex: 1; margin-right: 20px;">
+          <h3>Total Income</h3>
+          <p id="total-income" style="color: #28a745; font-weight: bold;">₹0</p>
+        </div>
+        <div style="flex: 1; margin-right: 20px;">
+          <h3>Total Expenses</h3>
+          <p id="total-expense" style="color: #ff4d4d; font-weight: bold;">₹0</p>
+        </div>
+        <div style="flex: 1;">
+          <h3>Remaining Budget</h3>
+          <p id="remaining-budget" style="color: #007bff; font-weight: bold;">₹0</p>
+        </div>
+      </div>
+
+      <hr style="margin: 30px 0;" />
+
+      <h3>Budget Allocations</h3>
+      <table border="1" cellpadding="10" cellspacing="0" style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead style="background-color: #e9ecef;">
+          <tr>
+            <th>Category</th>
+            <th>Amount (₹)</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+          </tr>
+        </thead>
+        <tbody id="budget-table">
+          <tr><td colspan="4">Loading budgets...</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top: 30px;">Recent Transactions</h3>
+      <ul id="transaction-list" style="list-style: none; padding: 0;">
+        <li style="background-color: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+          Loading transactions...
+        </li>
+      </ul>
+
+      <div style="margin-top: 20px;">
+        <a href="income.html" style="background-color: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Add Income</a>
+        <a href="expense.html" style="background-color: #ff4d4d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Add Expense</a>
+        <a href="budget.html" style="background-color: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Set Budget</a>
+        <!-- Refresh Button -->
+        <button onclick="loadSummary()" style="background-color: #17a2b8; color: white; padding: 10px 20px; border-radius: 5px; border: none; margin-top: 20px;">Refresh</button>
+      </div>
+    </div>
+  </center>
+
+  <script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      alert("You are not logged in. Redirecting to login...");
+      window.location.href = "login.html";
+    }
+
+    async function fetchData(url) {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch ${url}: ${res.status}`);
+      }
+      return res.json();
+    }
+
+    async function loadSummary() {
+      try {
+        // Assuming backend API is running at http://localhost:5000
+        const summary = await fetchData('http://localhost:5000/summary');
+        const { income: incomes, expenses, budgets } = summary;
+
+        const totalIncome = incomes.reduce((sum, item) => sum + Number(item.amount), 0);
+        const totalExpense = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
+        const totalBudget = budgets.reduce((sum, item) => sum + Number(item.amount), 0);
+
+        document.getElementById('total-income').textContent = `₹${totalIncome}`;
+        document.getElementById('total-expense').textContent = `₹${totalExpense}`;
+        document.getElementById('remaining-budget').textContent = `₹${(totalBudget - totalExpense).toFixed(2)}`;
+
+        const budgetTable = document.getElementById('budget-table');
+        budgetTable.innerHTML = '';
+        if (budgets.length === 0) {
+          budgetTable.innerHTML = '<tr><td colspan="4">No budget set.</td></tr>';
+        } else {
+          budgets.forEach(b => {
+            budgetTable.innerHTML += `
+              <tr>
+                <td>${b.category}</td>
+                <td>₹${b.amount}</td>
+                <td>${new Date(b.startdate).toLocaleDateString()}</td>
+                <td>${new Date(b.enddate).toLocaleDateString()}</td>
+              </tr>`;
+          });
+        }
+
+        const transactionList = document.getElementById('transaction-list');
+        transactionList.innerHTML = '';
+
+        const recent = [...incomes.slice(-2), ...expenses.slice(-2)]
+          .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
+          .slice(0, 5);
+
+        if (recent.length === 0) {
+          transactionList.innerHTML = '<li>No transactions yet.</li>';
+        } else {
+          recent.forEach(txn => {
+            const isIncome = txn.source || txn.income_source_id;
+            transactionList.innerHTML += `
+              <li style="background-color: ${isIncome ? '#e8f5e9' : '#fdecea'}; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                <strong>${isIncome ? 'Income' : 'Expense'}</strong> of ₹${txn.amount} - ${txn.category || txn.source || 'N/A'}
+              </li>`;
+          });
+        }
+
+      } catch (err) {
+        console.error('Error loading summary:', err);
+        alert("Failed to load summary. Please try again later.");
+      }
+    }
+
+    loadSummary();
+  </script>
+</body>
+</html>
