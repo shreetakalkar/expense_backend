@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// Create income source
+// Create a new income source
 exports.createIncomeSource = async (req, res) => {
   const { name, description, income_id } = req.body;
 
@@ -27,7 +27,7 @@ exports.getAllIncomeSources = async (req, res) => {
   }
 };
 
-// Get income source by ID
+// Get a single income source by ID
 exports.getIncomeSourceById = async (req, res) => {
   const { id } = req.params;
 
@@ -42,7 +42,7 @@ exports.getIncomeSourceById = async (req, res) => {
   }
 };
 
-// Update income source
+// Update an income source
 exports.updateIncomeSource = async (req, res) => {
   const { id } = req.params;
   const { name, description, income_id } = req.body;
@@ -60,7 +60,7 @@ exports.updateIncomeSource = async (req, res) => {
   }
 };
 
-// Delete income source
+// Delete an income source
 exports.deleteIncomeSource = async (req, res) => {
   const { id } = req.params;
 

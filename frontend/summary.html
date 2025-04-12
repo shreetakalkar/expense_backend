@@ -54,7 +54,7 @@
         <a href="income.html" style="background-color: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Add Income</a>
         <a href="expense.html" style="background-color: #ff4d4d; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Add Expense</a>
         <a href="budget.html" style="background-color: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Set Budget</a>
-        <!-- Refresh Button -->
+
         <button onclick="loadSummary()" style="background-color: #17a2b8; color: white; padding: 10px 20px; border-radius: 5px; border: none; margin-top: 20px;">Refresh</button>
       </div>
     </div>
@@ -80,7 +80,6 @@
 
     async function loadSummary() {
       try {
-        // Assuming backend API is running at http://localhost:5000
         const summary = await fetchData('http://localhost:5000/summary');
         const { income: incomes, expenses, budgets } = summary;
 
@@ -120,9 +119,14 @@
         } else {
           recent.forEach(txn => {
             const isIncome = txn.source || txn.income_source_id;
+            const txnType = isIncome ? 'Income' : 'Expense';
+            const bgColor = isIncome ? '#e8f5e9' : '#fdecea';
+            const name = txn.income_source_name || txn.source || txn.category || 'N/A';
+            const date = new Date(txn.date || txn.created_at).toLocaleDateString();
+
             transactionList.innerHTML += `
-              <li style="background-color: ${isIncome ? '#e8f5e9' : '#fdecea'}; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
-                <strong>${isIncome ? 'Income' : 'Expense'}</strong> of ₹${txn.amount} - ${txn.category || txn.source || 'N/A'}
+              <li style="background-color: ${bgColor}; padding: 10px; margin-bottom: 10px; border-radius: 5px;">
+                <strong>${txnType}</strong> of ₹${txn.amount} for <em>${name}</em> on ${date}
               </li>`;
           });
         }
